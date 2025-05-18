@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, parseAuthHeader } from "./jwt";
+import { auth } from "@/auth";
 
 /**
- * Middleware function to check if a user is authenticated via JWT token
+ * Middleware function to check if a user is authenticated via JWT token or NextAuth session
  */
-export function isAuthenticated(
+export async function isAuthenticated(
   request: NextRequest,
   onUnauthenticated = () => 
     NextResponse.json(
@@ -12,19 +13,39 @@ export function isAuthenticated(
       { status: 401 }
     )
 ) {
+  // First try JWT token from Authorization header
   const authHeader = request.headers.get("authorization");
   const token = parseAuthHeader(authHeader || "");
 
-  if (!token) {
-    return { isAuth: false, response: onUnauthenticated() };
+  if (token) {
+    const payload = verifyToken(token);
+    if (payload) {
+      return { isAuth: true, user: payload };
+    }
   }
 
-  const payload = verifyToken(token);
-  if (!payload) {
-    return { isAuth: false, response: onUnauthenticated() };
+  // If JWT auth fails, try to get NextAuth session
+  try {
+    // Get session from NextAuth
+    const session = await auth();
+    
+    if (session?.user) {
+      // Convert NextAuth session user to our JWT payload format
+      const user = {
+        userId: session.user.id || session.user.email,
+        email: session.user.email || '',
+        name: session.user.name,
+        image: session.user.image
+      };
+      
+      return { isAuth: true, user };
+    }
+  } catch (error) {
+    console.error("Error getting NextAuth session:", error);
   }
-
-  return { isAuth: true, user: payload };
+  
+  // If all authentication methods fail
+  return { isAuth: false, response: onUnauthenticated() };
 }
 
 /**
@@ -34,12 +55,12 @@ export function withAuth(
   handler: (req: NextRequest, user: any) => Promise<NextResponse>
 ) {
   return async (request: NextRequest) => {
-    const { isAuth, user, response } = isAuthenticated(request);
+    const auth = await isAuthenticated(request);
     
-    if (!isAuth) {
-      return response;
+    if (!auth.isAuth) {
+      return auth.response;
     }
     
-    return handler(request, user);
+    return handler(request, auth.user);
   };
 } 
