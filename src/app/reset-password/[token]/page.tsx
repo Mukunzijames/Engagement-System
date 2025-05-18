@@ -2,17 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
-interface ResetPasswordPageProps {
-  params: Promise<{
-    token: string;
-  }>;
-}
-
-export default async function ResetPasswordPage({ params }: ResetPasswordPageProps) {
-  const { token } = await params;
+export default function ResetPasswordPage() {
+  const params = useParams();
+  const token = params?.token as string;
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
