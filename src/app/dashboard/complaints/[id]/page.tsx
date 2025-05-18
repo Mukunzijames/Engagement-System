@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { Card, CardBadge, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -46,17 +46,26 @@ interface Category {
   name: string;
 }
 
-export default async function ComplaintDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ComplaintDetailPage() {
   const router = useRouter();
-  const { id } = await params;
-  const { data: complaint, isLoading } = useComplaintDetails(parseInt(id));
+  const params = useParams();
+  const [complaintId, setComplaintId] = useState<number | null>(null);
+  
+  useEffect(() => {
+    if (params?.id) {
+      const id = typeof params.id === 'string' ? parseInt(params.id) : parseInt(params.id[0]);
+      setComplaintId(id);
+    }
+  }, [params]);
+
+  const { data: complaint, isLoading } = useComplaintDetails(complaintId || 0);
   const { data: categories } = useCategories();
   const [response, setResponse] = useState("");
-  const addResponseMutation = useAddResponse(parseInt(id));
+  const addResponseMutation = useAddResponse(complaintId || 0);
   const updateComplaintMutation = useUpdateComplaint();
   
   const handleSubmitResponse = async () => {
-    if (!response.trim()) return;
+    if (!response.trim() || !complaintId) return;
     
     try {
       await addResponseMutation.mutateAsync({
@@ -72,9 +81,11 @@ export default async function ComplaintDetailPage({ params }: { params: Promise<
   };
   
   const handleStatusChange = async (status: string) => {
+    if (!complaintId) return;
+    
     try {
       await updateComplaintMutation.mutateAsync({
-        id: parseInt(id),
+        id: complaintId,
         status,
         statusComment: `Status changed to ${status}`,
         // In a real app, the updatedBy ID would come from auth
@@ -85,7 +96,7 @@ export default async function ComplaintDetailPage({ params }: { params: Promise<
     }
   };
   
-  if (isLoading) {
+  if (!complaintId || isLoading) {
     return <div className="text-center py-8">Loading...</div>;
   }
   
@@ -93,7 +104,7 @@ export default async function ComplaintDetailPage({ params }: { params: Promise<
     return (
       <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-2">Complaint not found</h3>
-        <Button onClick={() => router.push("/complaints")} variant="outline">
+        <Button onClick={() => router.push("/dashboard/complaints")} variant="outline">
           Back to Complaints
         </Button>
       </div>

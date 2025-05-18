@@ -64,3 +64,34 @@ export const responses = pgTable('responses', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+// Chat related tables
+
+export const chatRooms = pgTable('chat_rooms', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  complaintId: integer('complaint_id').references(() => complaints.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const chatParticipants = pgTable('chat_participants', {
+  id: serial('id').primaryKey(),
+  roomId: integer('room_id').references(() => chatRooms.id).notNull(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  isAdmin: boolean('is_admin').default(false),
+  joinedAt: timestamp('joined_at').notNull().defaultNow(),
+  leftAt: timestamp('left_at'),
+});
+
+export const chatMessages = pgTable('chat_messages', {
+  id: serial('id').primaryKey(),
+  roomId: integer('room_id').references(() => chatRooms.id).notNull(),
+  senderId: integer('sender_id').references(() => users.id).notNull(),
+  content: text('content').notNull(),
+  read: boolean('read').default(false),
+  attachmentUrl: text('attachment_url'),
+  attachmentType: text('attachment_type'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});

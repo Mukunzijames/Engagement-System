@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,7 +13,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const router = useRouter();
+
+  // Get the selected role from localStorage on component mount
+  useEffect(() => {
+    const role = localStorage.getItem('selectedRole');
+    setSelectedRole(role);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +37,8 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid email or password");
       } else {
-        router.push("/");
+        // Redirect to dashboard with the selected role information
+        router.push("/dashboard");
         router.refresh();
       }
     } catch (error) {
@@ -43,7 +51,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn("google", { callbackUrl: "/" });
+      await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
       setError("Failed to sign in with Google");
       setIsLoading(false);
@@ -65,7 +73,11 @@ export default function LoginPage() {
               </div>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h1>
-            <p className="text-gray-600">Sign in to access your account</p>
+            {selectedRole && (
+              <p className="text-gray-600">
+                Sign in as <span className="font-medium capitalize">{selectedRole}</span>
+              </p>
+            )}
           </div>
 
           {error && (
@@ -164,6 +176,12 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
+          
+          <div className="mt-4 text-center">
+            <Link href="/" className="text-sm text-gray-500 hover:underline">
+              ← Back to role selection
+            </Link>
+          </div>
         </div>
       </div>
 

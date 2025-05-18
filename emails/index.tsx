@@ -18,13 +18,11 @@ interface PasswordResetEmailProps {
   resetLink?: string;
 }
 
-const baseUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : '';
+const baseUrl = "https://engagement-system.vercel.app";
 
 export const PasswordResetEmail = ({
   username = '',
-  resetLink = 'https://example.com/reset-password',
+  resetLink = `${baseUrl}/reset-password`,
 }: PasswordResetEmailProps) => {
   return (
     <Html>
@@ -85,7 +83,7 @@ export const PasswordResetEmail = ({
 
 PasswordResetEmail.PreviewProps = {
   username: 'Citizen',
-  resetLink: 'https://example.com/reset-password?token=123456789',
+  resetLink: `${baseUrl}/reset-password/123456789`,
 } as PasswordResetEmailProps;
 
 export default PasswordResetEmail;

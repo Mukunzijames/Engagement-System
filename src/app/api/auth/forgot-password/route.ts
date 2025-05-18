@@ -25,10 +25,8 @@ export async function POST(request: NextRequest) {
 
     const token = await generatePasswordResetToken(user.id);
 
-    // Simplified base URL determination
-    const baseUrl = process.env.NODE_ENV === 'production'
-      ? (process.env.NEXT_PUBLIC_APP_URL || `https://${process.env.VERCEL_URL || 'citizenengagement.com'}`)
-      : 'http://localhost:3000';
+    // Use the production BASE_URL
+    const baseUrl = "https://engagement-system.vercel.app";
     
     const resetLink = `${baseUrl}/reset-password/${token}`;
 
