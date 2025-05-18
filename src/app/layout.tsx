@@ -15,9 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-white min-h-screen text-gray-800">
+      <body className="bg-gray-50 min-h-screen text-gray-800">
         <Providers>
-          <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 bg-white">
+          <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             {children}
           </main>
         </Providers>

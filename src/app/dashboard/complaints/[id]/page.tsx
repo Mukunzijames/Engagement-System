@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import { Card, CardBadge, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useComplaintDetails, useCategories, useAddResponse, useUpdateComplaint } from "@/hooks/useQueries";
-import { FaMapMarkerAlt, FaTag, FaClock, FaArrowLeft, FaPaperclip } from "react-icons/fa";
+import { FaMapMarkerAlt, FaTag, FaClock, FaArrowLeft, FaPaperclip, FaUser, FaBuilding } from "react-icons/fa";
 
 interface Complaint {
   id: number;
@@ -49,9 +50,15 @@ interface Category {
 export default function ComplaintDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const { data: session } = useSession();
   const [complaintId, setComplaintId] = useState<number | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   
   useEffect(() => {
+    // Get the selected role from localStorage
+    const role = localStorage.getItem('selectedRole');
+    setUserRole(role);
+
     if (params?.id) {
       const id = typeof params.id === 'string' ? parseInt(params.id) : parseInt(params.id[0]);
       setComplaintId(id);
@@ -71,7 +78,7 @@ export default function ComplaintDetailPage() {
       await addResponseMutation.mutateAsync({
         response,
         // In a real app, the responder ID would come from auth
-        responderId: 2,
+        responderId: session?.user?.id ? parseInt(session.user.id) : 0,
       });
       
       setResponse("");
@@ -89,7 +96,7 @@ export default function ComplaintDetailPage() {
         status,
         statusComment: `Status changed to ${status}`,
         // In a real app, the updatedBy ID would come from auth
-        updatedBy: 2,
+        updatedBy: session?.user?.id ? parseInt(session.user.id) : 0,
       });
     } catch (error) {
       console.error("Error updating status:", error);
@@ -143,6 +150,10 @@ export default function ComplaintDetailPage() {
   
   const category = categories?.find((c: Category) => c.id === complaint.categoryId)?.name || "Unknown";
 
+  // Check if user is agency or citizen
+  const isAgency = userRole === 'agency';
+  const isCitizen = userRole === 'citizen';
+
   return (
     <div>
       <div className="mb-6">
@@ -154,6 +165,15 @@ export default function ComplaintDetailPage() {
           <FaArrowLeft className="mr-1" />
           Back
         </Button>
+      </div>
+      
+      {/* Role indicator */}
+      <div className="mb-4 flex items-center text-gray-500">
+        {userRole === 'citizen' ? (
+          <><FaUser className="mr-1" /> Viewing as Citizen</>
+        ) : (
+          <><FaBuilding className="mr-1" /> Viewing as Agency</>
+        )}
       </div>
       
       <Card className="mb-6">
@@ -212,40 +232,43 @@ export default function ComplaintDetailPage() {
           )}
         </CardContent>
         
-        <CardFooter className="flex-col items-start">
-          <h3 className="font-medium mb-2">Update Status</h3>
-          <div className="flex space-x-2">
-            <Button 
-              size="sm" 
-              variant={complaint.status === "in_progress" ? "primary" : "outline"}
-              disabled={complaint.status === "in_progress"}
-              onClick={() => handleStatusChange("in_progress")}
-              className={complaint.status === "in_progress" ? "bg-amber-600 hover:bg-amber-700" : ""}
-            >
-              In Progress
-            </Button>
-            <Button 
-              size="sm" 
-              variant={complaint.status === "resolved" ? "success" : "outline"}
-              disabled={complaint.status === "resolved"}
-              onClick={() => handleStatusChange("resolved")}
-            >
-              Resolved
-            </Button>
-            <Button 
-              size="sm" 
-              variant={complaint.status === "closed" ? "secondary" : "outline"}
-              disabled={complaint.status === "closed"}
-              onClick={() => handleStatusChange("closed")}
-            >
-              Closed
-            </Button>
-          </div>
-        </CardFooter>
+        {/* Only show status update section to agency users */}
+        {isAgency && (
+          <CardFooter className="flex-col items-start">
+            <h3 className="font-medium mb-2">Update Status</h3>
+            <div className="flex space-x-2">
+              <Button 
+                size="sm" 
+                variant={complaint.status === "in_progress" ? "primary" : "outline"}
+                disabled={complaint.status === "in_progress"}
+                onClick={() => handleStatusChange("in_progress")}
+                className={complaint.status === "in_progress" ? "bg-amber-600 hover:bg-amber-700" : ""}
+              >
+                In Progress
+              </Button>
+              <Button 
+                size="sm" 
+                variant={complaint.status === "resolved" ? "success" : "outline"}
+                disabled={complaint.status === "resolved"}
+                onClick={() => handleStatusChange("resolved")}
+              >
+                Resolved
+              </Button>
+              <Button 
+                size="sm" 
+                variant={complaint.status === "closed" ? "secondary" : "outline"}
+                disabled={complaint.status === "closed"}
+                onClick={() => handleStatusChange("closed")}
+              >
+                Closed
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
-      {/* Status History */}
-      {complaint.statusHistory && complaint.statusHistory.length > 0 && (
+      {/* Status History - only visible to agency users */}
+      {isAgency && complaint.statusHistory && complaint.statusHistory.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Status History</CardTitle>
@@ -297,27 +320,70 @@ export default function ComplaintDetailPage() {
         </CardContent>
       </Card>
       
-      {/* Add Response Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Response</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            placeholder="Write your response here..."
-            value={response}
-            onChange={(e) => setResponse(e.target.value)}
-            className="mb-4"
-          />
-          <Button 
-            onClick={handleSubmitResponse}
-            disabled={!response.trim() || addResponseMutation.isPending}
-            className="bg-amber-600 hover:bg-amber-700"
-          >
-            {addResponseMutation.isPending ? "Submitting..." : "Submit Response"}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Only agency users can add responses */}
+      {isAgency && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Add Response</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              placeholder="Write your response here..."
+              value={response}
+              onChange={(e) => setResponse(e.target.value)}
+              className="mb-4"
+            />
+            <Button 
+              onClick={handleSubmitResponse}
+              disabled={!response.trim() || addResponseMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {addResponseMutation.isPending ? "Submitting..." : "Submit Response"}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Alternative view for citizens - simplified tracking UI */}
+      {isCitizen && complaint.statusHistory && complaint.statusHistory.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Complaint Tracking</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-0">
+              <div className="relative">
+                {complaint.statusHistory.map((history: StatusHistory, index: number) => {
+                  const isActive = index === complaint.statusHistory!.length - 1;
+                  return (
+                    <div key={history.id} className="flex pb-6">
+                      <div className="flex flex-col items-center mr-4">
+                        <div className={`rounded-full h-5 w-5 flex items-center justify-center ${isActive ? 'bg-amber-600' : 'bg-gray-300'}`}>
+                          <div className="h-2 w-2 rounded-full bg-white"></div>
+                        </div>
+                        {index < complaint.statusHistory!.length - 1 && (
+                          <div className="h-full w-0.5 bg-gray-300"></div>
+                        )}
+                      </div>
+                      <div className={`pb-2 ${isActive ? 'text-amber-800' : 'text-gray-700'}`}>
+                        <div className="flex items-center">
+                          <span className={`font-medium ${isActive ? 'text-amber-800' : 'text-gray-800'}`}>
+                            {history.status.charAt(0).toUpperCase() + history.status.slice(1).replace('_', ' ')}
+                          </span>
+                          <span className="ml-2 text-xs text-gray-500">{formatDate(history.createdAt)}</span>
+                        </div>
+                        {history.comment && (
+                          <p className="text-sm mt-1">{history.comment}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 } 
