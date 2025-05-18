@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useCategories, useCreateComplaint } from "@/hooks/useQueries";
-import { FaPaperclip, FaMapMarkerAlt } from "react-icons/fa";
+import { FaPaperclip, FaMapMarkerAlt, FaUser, FaEnvelope } from "react-icons/fa";
 import axios from "axios";
 
 interface Category {
@@ -21,26 +22,34 @@ type FormData = {
   categoryId: number;
   location: string;
   anonymous: boolean;
-  name: string;
-  email: string;
 };
 
-export function ComplaintForm() {
+interface ComplaintFormProps {
+  onSuccess?: () => void;
+}
+
+export function ComplaintForm({ onSuccess }: ComplaintFormProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [files, setFiles] = useState<File[]>([]);
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { data: categories, isLoading: categoriesLoading } = useCategories();
   const createComplaintMutation = useCreateComplaint();
   
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormData>();
 
   const onSubmit = async (data: FormData) => {
+    if (!session?.user) {
+      alert("You must be logged in to submit a complaint");
+      return;
+    }
+    
     try {
-      setIsCreatingUser(true);
+      setIsSubmitting(true);
       
       // Convert files to base64 for storage
       const attachmentPromises = files.map((file) => {
@@ -59,26 +68,8 @@ export function ComplaintForm() {
 
       const attachments = await Promise.all(attachmentPromises);
       
-      let userId = null;
-      
-      // Create a user if name and email are provided
-      if (data.name && data.email) {
-        try {
-          const userResponse = await axios.post('/api/users', {
-            name: data.name,
-            email: data.email,
-            // Use a default password for demo purposes (in a real app, you'd handle this better)
-            password: 'password123',
-            role: 'citizen'
-          });
-          
-          userId = userResponse.data.id;
-          console.log('Created user with ID:', userId);
-        } catch (error) {
-          console.error('Failed to create user:', error);
-          // Continue without a user ID
-        }
-      }
+      // Get user ID from session
+      const userId = session.user.id ? parseInt(session.user.id) : null;
       
       // Submit the form data with attachments
       const complaintData = {
@@ -93,11 +84,17 @@ export function ComplaintForm() {
       
       await createComplaintMutation.mutateAsync(complaintData);
       
-      router.push("/complaints");
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Redirect to complaints page if no callback provided
+        router.push("/dashboard/complaints");
+      }
     } catch (error) {
       console.error("Error submitting complaint:", error);
     } finally {
-      setIsCreatingUser(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -133,20 +130,17 @@ export function ComplaintForm() {
           <div className="border-b border-gray-200 pb-4 mb-4">
             <h3 className="font-medium mb-3">Your Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="Name"
-                placeholder="Your name"
-                {...register("name")}
-              />
-              <Input
-                label="Email"
-                placeholder="Your email address"
-                type="email"
-                {...register("email")}
-              />
+              <div className="flex items-center space-x-2">
+                <FaUser className="text-amber-600" />
+                <span className="text-gray-700">{session?.user?.name || "Not logged in"}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <FaEnvelope className="text-amber-600" />
+                <span className="text-gray-700">{session?.user?.email || "No email available"}</span>
+              </div>
             </div>
             <div className="mt-2 text-sm text-gray-500">
-              Providing your name and email is optional but recommended for follow-up communications.
+              Your complaint will be filed using your account information.
             </div>
           </div>
           
@@ -251,10 +245,10 @@ export function ComplaintForm() {
           </Button>
           <Button
             type="submit"
-            disabled={isSubmitting || isCreatingUser}
+            disabled={isSubmitting || !session?.user}
             className="bg-amber-600 hover:bg-amber-700"
           >
-            {isSubmitting || isCreatingUser ? "Submitting..." : "Submit Complaint"}
+            {isSubmitting ? "Submitting..." : "Submit Complaint"}
           </Button>
         </CardFooter>
       </form>

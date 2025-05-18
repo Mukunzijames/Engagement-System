@@ -17,8 +17,8 @@ export default function RootLayout({
     <html lang="en">
       <body className="bg-white min-h-screen text-gray-800">
         <Providers>
-          <Header />
-          <main className="w-full bg-white">
+        <Header />
+        <main className="w-full bg-white">
             {children}
           </main>
         </Providers>

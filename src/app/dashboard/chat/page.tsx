@@ -137,7 +137,7 @@ export default function ChatPage() {
               image: null
             }
           }));
-          // Sort messages by creation time (oldest first since we'll reverse them for display)
+          // Sort messages by creation time (oldest first for chronological display)
           const sortedMessages = [...validatedData].sort((a, b) => 
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           );
@@ -182,12 +182,12 @@ export default function ChatPage() {
     };
   }, [selectedRoom, socket, session]);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change or when a room is selected
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, selectedRoom]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedRoom || !session?.user) return;
@@ -500,8 +500,7 @@ export default function ChatPage() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div ref={messagesEndRef}></div>
-                      {messages.slice().reverse().map((message) => {
+                      {messages.map((message) => {
                         // Add null check for sender to prevent errors
                         const isCurrentUser = message.sender?.id === Number(session?.user?.id);
                         const messageTime = formatTime(message.createdAt);
@@ -569,6 +568,7 @@ export default function ChatPage() {
                           </div>
                         );
                       })}
+                      <div ref={messagesEndRef}></div>
                     </div>
                   )}
                 </div>
