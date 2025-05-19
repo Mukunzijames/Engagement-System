@@ -71,4 +71,47 @@ npm start
 
 # Run database migrations
 npm run db:migrate
+
+#run database push
+npm run db:push
+```
+
+## Demo
+
+### Live Demo
+Check out the live demo: [Engagement System](https://engagement-system.vercel.app)
+
+### Demo Video
+Watch the demo video: [Vimeo Demo](https://vimeo.com/1085575425/08c848e30f?share=copy)
+
+## Project Structure
+
+```
+engagement-system/
+├── .git/                  # Git repository
+├── .next/                 # Next.js build output
+├── emails/                # React Email templates
+├── node_modules/          # Dependencies
+├── public/                # Static assets
+├── src/                   # Source code
+│   ├── app/               # Next.js app router
+│   ├── components/        # React components
+│   ├── db/                # Database setup and queries
+│   ├── hooks/             # React hooks
+│   ├── lib/               # Utility libraries
+│   ├── services/          # Service layer
+│   ├── utils/             # Utility functions
+│   ├── auth.ts            # Authentication configuration
+│   └── middleware.ts      # Next.js middleware
+├── .coderabbit.yaml       # CodeRabbit configuration
+├── .gitignore             # Git ignore patterns
+├── drizzle.config.ts      # Drizzle ORM configuration
+├── next-env.d.ts          # Next.js TypeScript declarations
+├── next.config.ts         # Next.js configuration
+├── package-lock.json      # Dependency lock file
+├── package.json           # Project metadata and scripts
+├── postcss.config.mjs     # PostCSS configuration
+├── README.md              # Project documentation
+├── server.js              # Custom server for Socket.io
+└── tsconfig.json          # TypeScript configuration
 ```
