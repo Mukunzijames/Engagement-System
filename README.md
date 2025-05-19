@@ -125,3 +125,11 @@ engagement-system/
 ├── server.js              # Custom server for Socket.io
 └── tsconfig.json          # TypeScript configuration
 ```
+```
+#environment
+DATABASE_URL=
+AUTH_SECRET=
+AUTH_GOOGLE_ID=
+AUTH_GOOGLE_SECRET=
+RESEND_API_KEY=
+BASE_URL=
