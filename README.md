@@ -7,6 +7,16 @@
 ![NextAuth](https://img.shields.io/badge/NextAuth-black?style=flat&logo=next.js&logoColor=white)
 
 ## Getting Started
+<img width="1440" alt="Screenshot 2025-05-19 at 09 01 29" src="https://github.com/user-attachments/assets/b8a179c8-ca01-4f35-bfd9-270b35f7f891" />
+<img width="1440" alt="Screenshot 2025-05-19 at 09 03 08" src="https://github.com/user-attachments/assets/e2544aaf-d481-42eb-ae7c-559b29cee3b0" />
+<img width="1440" alt="Screenshot 2025-05-19 at 09 04 09" src="https://github.com/user-attachments/assets/8eaefbad-c184-492a-8a6c-141bf1ab80fd" />
+<img width="1440" alt="Screenshot 2025-05-19 at 09 04 52" src="https://github.com/user-attachments/assets/48049e03-9818-4771-b7b9-08a655125cc2" />
+<img width="1440" alt="Screenshot 2025-05-19 at 09 07 13" src="https://github.com/user-attachments/assets/bc4dc4ca-5b41-4519-ad31-41e685703ce8" />
+
+
+
+
+
 
 First, run the development server:
 
